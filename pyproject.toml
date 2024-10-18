@@ -1,0 +1,23 @@
+[project]
+name = "db-schema-manager"
+description = "Library for programatically defining a database schema and applying it to a database, or interatively inspecting an existing database schema"
+authors = [
+    { name = "Finn Andersen" }
+]
+readme = "README.md"
+requires-python = ">=3.8, <3.12"
+dynamic = ["version"]
+
+dependencies = [
+    "pydantic",
+]
+
+[project.urls]
+repository = "https://github.com/Finndersen/sqlserver-schema-manager.git"
+
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "deployment*"]
