@@ -4,7 +4,7 @@
 ## Introduction
 
 A library for programmatically managing the schema of a SQLServer Database, with two modes of operation:
-* Declare the entire structure of a SQLServer instance in code, and apply it to a target database (automatically determines and executes all delta changes required).
+* Declare the entire structure of a SQLServer instance in code, and apply it to a target database (automatically determines and executes all diff changes required).
 * Programmatically/interactively inspect the structure of an existing SQLServer instance, and make changes using code instead of SQL.
 
 It can be used in tandem with other tools that manage a DB schema (e.g. an ORM), to manage the features that they do not support (e.g. the database itself, users, partitioning and compression).
