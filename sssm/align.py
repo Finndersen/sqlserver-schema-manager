@@ -29,7 +29,11 @@ def align_entity(declared_obj, reflected_obj, align_children=True):
     assert declared_obj.object_type == reflected_obj.object_type, 'Declared and reflected objects must be of same type to align'
     # Compare/update entity attributes
     for attr_name in attributes.valid_attributes[declared_obj.object_type]:
-        if getattr(declared_obj, attr_name) != getattr(reflected_obj, attr_name):
+        declared_attr = getattr(declared_obj, attr_name)
+        if declared_attr is None:
+            # Attribute is not defined on declared object, leave as-is
+            continue
+        if declared_attr != getattr(reflected_obj, attr_name):
             log.info('{} attribute "{}" is currently: "{}" but should be: "{}"'.format(reflected_obj, attr_name,
                                                                            getattr(reflected_obj, attr_name),
                                                                            getattr(declared_obj, attr_name)))
