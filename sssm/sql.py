@@ -11,9 +11,8 @@ min_column_value = "SELECT MIN([{column}]) FROM [{schema}].[{table}]"
 ###########################################################################################
 #           DATABASES
 ###########################################################################################
-CREATE_DB = """
-CREATE DATABASE [{db_name}]
- CONTAINMENT = NONE
+CREATE_DB_BASE = "CREATE DATABASE [{db_name}] CONTAINMENT = NONE"
+CREATE_DB_FILESPEC = """
  ON  PRIMARY 
 ( NAME = N'{db_name}', FILENAME = N'{data_file_path}' , SIZE = {data_size}MB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  LOG ON 

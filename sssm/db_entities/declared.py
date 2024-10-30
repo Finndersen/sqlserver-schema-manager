@@ -350,13 +350,25 @@ class Database(DeclaredEntity):
     object_type = 'databases'
     child_types = (Schema, User)
 
-    def __init__(self, name, owner, data_file_dir, log_file_dir, data_size, log_size=None, recovery_model_desc='FULL',
+    def __init__(self, name, owner, data_file_dir=None, log_file_dir=None, data_size=None, log_size=None, recovery_model_desc='FULL',
                  data_file_name=None, log_file_name=None, tables=None, **kwargs):
         if recovery_model_desc.lower() not in {'full', 'simple', 'bulk_logged'}:
             raise ValueError('Invalid database recovery level: {}'.format(recovery_model_desc))
 
-        data_file_name = data_file_name or '{}.mdf'.format(name)
-        log_file_name = log_file_name or '{}_log.ldf'.format(name)
+        if data_file_dir is not None:
+            # Handle specifying data and log file details
+            if not data_size:
+                raise ValueError('Data size must be specified if data file name is provided')
+
+            log_size = log_size or data_size/10
+            data_file_name = data_file_name or '{}.mdf'.format(name)
+            log_file_name = log_file_name or '{}_log.ldf'.format(name)
+            data_file_path = os.path.join(data_file_dir, data_file_name).replace('/', '\\')
+            log_file_path = os.path.join(log_file_dir, log_file_name).replace('/', '\\')
+        else:
+            # Use defaults
+            data_file_path = None
+            log_file_path = None
 
         # Allow specifying tables directly as a shorthand
         if tables:
@@ -367,10 +379,10 @@ class Database(DeclaredEntity):
 
         super().__init__(name, owner=owner,
                          # TODO: Make more flexible attribute equality to allow comparing file paths with different seperators
-                         data_file_path=os.path.join(data_file_dir, data_file_name).replace('/', '\\'),
-                         log_file_path=os.path.join(log_file_dir, log_file_name).replace('/', '\\'),
+                         data_file_path=data_file_path,
+                         log_file_path=log_file_path,
                          data_size=data_size,
-                         log_size=log_size or data_size/10,
+                         log_size=log_size,
                          recovery_model_desc=recovery_model_desc, **kwargs)
 
     def get_table(self, table_name, schema_name='dbo'):

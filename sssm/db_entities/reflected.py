@@ -345,7 +345,7 @@ class ReflectedEntity(object):
     def _delete_ex(self):
         """
         Perform SQL statement to delete object
-        :return: 
+        :return:
         """
         raise NotImplementedError()
 
@@ -1246,11 +1246,15 @@ class ReflectedDatabase(ReflectedEntity):
 
     @classmethod
     def _create_ex(cls, parent, declared_db):
-        parent.ex(sql.CREATE_DB.format(db_name=declared_db.name,
-                                       data_size=declared_db.data_size,
-                                       log_size=declared_db.log_size,
-                                       data_file_path=declared_db.data_file_path,
-                                       log_file_path=declared_db.log_file_path), autocommit=True)
+        create_sql = sql.CREATE_DB_BASE.format(db_name=declared_db.name)
+        if declared_db.data_file_path:
+            create_sql += sql.CREATE_DB_FILESPEC.format(db_name=declared_db.name,
+                                                        data_size=declared_db.data_size,
+                                                        log_size=declared_db.log_size,
+                                                        data_file_path=declared_db.data_file_path,
+                                                        log_file_path=declared_db.log_file_path)
+
+        parent.ex(create_sql, autocommit=True)
 
     @classmethod
     def _list_names_ex(cls, parent):
