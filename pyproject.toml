@@ -15,9 +15,6 @@ dependencies = [
 [project.urls]
 repository = "https://github.com/Finndersen/sqlserver-schema-manager.git"
 
-[build-system]
-requires = ["setuptools>=64", "setuptools_scm>=8", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-exclude = ["tests*", "deployment*"]
+[tool.ruff]
+line-length = 120
+target-version = "py311"

@@ -24,9 +24,11 @@ def align_entity(declared_obj, reflected_obj, align_children=True):
     :param bool align_children: Whether or not to also align child objects
     :return:
     """
-    log.debug('Aligning: {} with: {}'.format(declared_obj.display_details(), reflected_obj.display_details()))
+    log.debug("Aligning: {} with: {}".format(declared_obj.display_details(), reflected_obj.display_details()))
 
-    assert declared_obj.object_type == reflected_obj.object_type, 'Declared and reflected objects must be of same type to align'
+    assert (
+        declared_obj.object_type == reflected_obj.object_type
+    ), "Declared and reflected objects must be of same type to align"
     # Compare/update entity attributes
     for attr_name in attributes.valid_attributes[declared_obj.object_type]:
         declared_attr = getattr(declared_obj, attr_name)
@@ -34,9 +36,14 @@ def align_entity(declared_obj, reflected_obj, align_children=True):
             # Attribute is not defined on declared object, leave as-is
             continue
         if declared_attr != getattr(reflected_obj, attr_name):
-            log.info('{} attribute "{}" is currently: "{}" but should be: "{}"'.format(reflected_obj, attr_name,
-                                                                           getattr(reflected_obj, attr_name),
-                                                                           getattr(declared_obj, attr_name)))
+            log.info(
+                '{} attribute "{}" is currently: "{}" but should be: "{}"'.format(
+                    reflected_obj,
+                    attr_name,
+                    getattr(reflected_obj, attr_name),
+                    getattr(declared_obj, attr_name),
+                )
+            )
             reflected_obj.set_attribute(declared_obj, attr_name)
     # Align children
     if align_children:
@@ -57,16 +64,19 @@ def align_child_type(declared_parent, reflected_parent, child_class):
     if declared_children is not None:
         # Remove any existing children not declared
         if not declared_parent.ignore_extra_children_type(child_class.object_type):
-            log.debug('Checking existing {} children of: {}'.format(child_class.object_type, reflected_parent))
+            log.debug("Checking existing {} children of: {}".format(child_class.object_type, reflected_parent))
             for existing_child in reflected_parent.get_children(child_class.object_type):
-                log.debug('Found child object: {}'.format(existing_child))
+                log.debug("Found child object: {}".format(existing_child))
                 # Check whether object is in declaration
                 if any((existing_child == declared_child for declared_child in declared_children)):
-                    log.debug('Existing child object: {} matches declaration'.format(existing_child))
+                    log.debug("Existing child object: {} matches declaration".format(existing_child))
                     continue
-                log.debug('Existing child: {} does not match any in definition: {}'.format(existing_child,
-                                                                                           [declared.name for declared
-                                                                                            in declared_children]))
+                log.debug(
+                    "Existing child: {} does not match any in definition: {}".format(
+                        existing_child,
+                        [declared.name for declared in declared_children],
+                    )
+                )
                 existing_child.delete()
 
         # Align declared children

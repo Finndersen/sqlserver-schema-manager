@@ -2,7 +2,7 @@
 #       GENERAL
 ###########################################################################################
 
-CDC_MAX_LSN = 'SELECT sys.fn_cdc_get_max_lsn()'
+CDC_MAX_LSN = "SELECT sys.fn_cdc_get_max_lsn()"
 
 max_column_value = "SELECT MAX([{column}]) FROM [{schema}].[{table}]"
 
@@ -18,7 +18,7 @@ CREATE_DB_FILESPEC = """
  LOG ON 
 ( NAME = N'{db_name}_log', FILENAME = N'{log_file_path}' , SIZE = {log_size}MB , MAXSIZE = UNLIMITED , FILEGROWTH =10%)"""
 
-db_option_set = 'ALTER DATABASE [{db_name}] SET {option_name} {value}'
+db_option_set = "ALTER DATABASE [{db_name}] SET {option_name} {value}"
 
 db_option_check = "SELECT 1 FROM sys.databases WHERE name = '{db_name}' AND {field} = '{value}'"
 
@@ -62,8 +62,8 @@ ALTER DATABASE {db_name}
 MODIFY FILE (name='{file_name}', filename='{file_path}')
 """
 
-SET_DB_OFFLINE = 'ALTER DATABASE {db_name} SET OFFLINE WITH ROLLBACK IMMEDIATE'
-SET_DB_ONLINE = 'ALTER DATABASE {db_name} SET ONLINE'
+SET_DB_OFFLINE = "ALTER DATABASE {db_name} SET OFFLINE WITH ROLLBACK IMMEDIATE"
+SET_DB_ONLINE = "ALTER DATABASE {db_name} SET ONLINE"
 
 DB_IN_HAG = "SELECT 1 FROM sys.dm_hadr_database_replica_states WHERE database_id = DB_ID('{db_name}')"
 ###########################################################################################
@@ -110,11 +110,11 @@ DP1.name AS role_name,
 WHERE DP1.type = 'R' AND DP2.name = '{user_name}'
 """
 
-LIST_USERS = '''
+LIST_USERS = """
 SELECT dp.name as [name], dp.principal_id, sp.name as [login_name]
 FROM sys.database_principals dp
 JOIN sys.server_principals sp ON dp.sid=sp.sid
-WHERE dp.type_desc = 'SQL_USER' '''
+WHERE dp.type_desc = 'SQL_USER' """
 
 USER_DETAIL = LIST_USERS + " AND dp.name = '{user_name}'"
 
@@ -131,7 +131,7 @@ USER_EXISTS = "SELECT 1 FROM sys.database_principals WHERE type='S' AND name ='{
 ###########################################################################################
 LIST_SCHEMAS = "SELECT name, schema_id, principal_id FROM [{db_name}].sys.schemas WHERE schema_id < 16384"
 
-schema_detail= LIST_SCHEMAS + " AND name = '{schema_name}'"
+schema_detail = LIST_SCHEMAS + " AND name = '{schema_name}'"
 
 CREATE_SCHEMA = "CREATE SCHEMA [{schema_name}]"
 
@@ -160,13 +160,15 @@ CREATE_TABLE = "CREATE TABLE [{schema}].[{table}] ({columns}) ON [PRIMARY]"
 
 DROP_TABLE = "DROP TABLE [{schema}].[{table}]"
 
-#table_def ="SELECT COLUMN_NAME, DATA_TYPE, COALESCE(CHARACTER_MAXIMUM_LENGTH, DATETIME_PRECISION), IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '{schema}' AND TABLE_NAME = '{table}'" #, COLUMN_DEFAULT
+# table_def ="SELECT COLUMN_NAME, DATA_TYPE, COALESCE(CHARACTER_MAXIMUM_LENGTH, DATETIME_PRECISION), IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '{schema}' AND TABLE_NAME = '{table}'" #, COLUMN_DEFAULT
 
 table_has_data = "SELECT 1 FROM [{schema}].[{table}]"
 
 DELETE_DATA = "DELETE FROM [{schema}].[{table}]"
 
-TABLE_EXISTS = "SELECT 1 FROM [{db_name}].INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '{schema}' AND TABLE_NAME = '{table}'"
+TABLE_EXISTS = (
+    "SELECT 1 FROM [{db_name}].INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '{schema}' AND TABLE_NAME = '{table}'"
+)
 
 
 RENAME_TABLE = "exec sp_rename '{schema}.{old_name}', '{new_name}'"
@@ -176,7 +178,9 @@ set_identity_insert = "SET IDENTITY_INSERT [{db_name}].[{schema}].[{table}] {val
 
 # Use the REBUILD WITH syntax to rebuild an entire table including all the partitions in a partitioned table.
 # If the table has a clustered index, the REBUILD option rebuilds the clustered index. REBUILD can be run as an ONLINE operation.
-SET_TABLE_COMPRESSION = "ALTER TABLE [{schema}].[{table}] REBUILD WITH (DATA_COMPRESSION = {compression}, ONLINE = {online})"
+SET_TABLE_COMPRESSION = (
+    "ALTER TABLE [{schema}].[{table}] REBUILD WITH (DATA_COMPRESSION = {compression}, ONLINE = {online})"
+)
 
 ###########################################################################################
 #           COLUMNS
@@ -285,7 +289,7 @@ indexes_on_column = """
         LEFT OUTER JOIN sys.objects obj ON obj.name = ind.name
     WHERE   ind.object_id = OBJECT_ID('{schema}.{table}') AND ic.key_ordinal != 0 AND col.name = '{column_name}' """
 
-table_index_details_old= """SELECT DISTINCT SI.name AS name, SP.data_compression_desc AS compression, SI.type_desc AS clustering, SO.type AS type, SI.is_unique_constraint AS is_constraint
+table_index_details_old = """SELECT DISTINCT SI.name AS name, SP.data_compression_desc AS compression, SI.type_desc AS clustering, SO.type AS type, SI.is_unique_constraint AS is_constraint
     FROM sys.partitions SP 
     INNER JOIN sys.tables ST ON st.object_id = sp.object_id 
     INNER JOIN sys.indexes SI ON SI.object_id = sp.object_id AND SI.index_id = sp.index_id
@@ -329,7 +333,9 @@ WHERE
 
 index_columns_order = " ORDER BY ind.index_id, ic.key_ordinal "
 
-index_nonpartition_columns = index_columns_base + " AND ic.is_included_column = 0 AND ic.partition_ordinal = 0 " + index_columns_order
+index_nonpartition_columns = (
+    index_columns_base + " AND ic.is_included_column = 0 AND ic.partition_ordinal = 0 " + index_columns_order
+)
 
 index_all_columns = index_columns_base + " AND ic.is_included_column = 0 " + index_columns_order
 
@@ -337,7 +343,9 @@ index_included_columns = index_columns_base + " AND ic.is_included_column = 1 " 
 
 INDEX_EXISTS = "SELECT 1 FROM sys.indexes WHERE name='{index_name}' AND object_id=OBJECT_ID('{schema}.{table}')"
 
-TABLE_INDEX_NAMES = "SELECT name FROM sys.indexes WHERE is_primary_key=0 AND type IN (1,2) AND object_id=OBJECT_ID('{schema}.{table}')"
+TABLE_INDEX_NAMES = (
+    "SELECT name FROM sys.indexes WHERE is_primary_key=0 AND type IN (1,2) AND object_id=OBJECT_ID('{schema}.{table}')"
+)
 
 RENAME_INDEX = "exec sp_rename '[{schema}].[{table}].[{old_name}]', '{new_name}', 'INDEX'"
 
@@ -363,7 +371,7 @@ CREATE_PK = """
     WITH (DATA_COMPRESSION = {compression})
 """
 
-PK_EXISTS = INDEX_EXISTS + ' AND is_primary_key=1'
+PK_EXISTS = INDEX_EXISTS + " AND is_primary_key=1"
 
 TABLE_PK_COLUMNS = """
 SELECT
@@ -382,8 +390,8 @@ TABLE_PK_NAME = "SELECT name FROM sys.indexes WHERE is_primary_key=1 AND object_
 ###########################################################################################
 #           COMPRESSION
 ###########################################################################################
-#Compression
-compression_check="""
+# Compression
+compression_check = """
     SELECT  SP.partition_number, SP.data_compression_desc
     FROM sys.partitions SP 
     INNER JOIN sys.tables ST ON st.object_id = sp.object_id 
@@ -394,7 +402,7 @@ compression_check="""
 ###########################################################################################
 #           PARTITIONS
 ###########################################################################################
-#Check if specified table has any partition schemes applied
+# Check if specified table has any partition schemes applied
 """
     SELECT 1
     FROM sys.tables AS t
@@ -451,7 +459,7 @@ CREATE_PARTITION_SCHEME = """
     ALL TO ([PRIMARY]);
 """
 
-TABLE_PARTITION_DETAILS= """
+TABLE_PARTITION_DETAILS = """
     SELECT c.name AS column_name, ps.name as ps_name, pf.name as pf_name
     FROM  sys.tables          t
     JOIN  sys.indexes         i 
@@ -505,8 +513,9 @@ TABLE_ROW_COUNT = """
     GROUP BY TBL.object_id, TBL.name"""
 
 
-
 SELECT = "SELECT {fields} FROM [{schema}].[{table}] {condition} {group_by} {order_by}"
 
 
-TRUNCATE_TABLE_PARTITIONS = "TRUNCATE TABLE [{schema}].[{table}] WITH (PARTITIONS ({start_partition} TO {end_partition}))"
+TRUNCATE_TABLE_PARTITIONS = (
+    "TRUNCATE TABLE [{schema}].[{table}] WITH (PARTITIONS ({start_partition} TO {end_partition}))"
+)

@@ -11,6 +11,7 @@ class ReflectedEntity(object):
     """
     Base SQLServer object which has associated server connection to perform actions
     """
+
     # Tuple of child object types of this DB object (Reflected Entity subclasses)
     child_types = tuple()
     # Identitifer for type of DB object (e.g. 'databases', 'tables')
@@ -22,7 +23,7 @@ class ReflectedEntity(object):
 
     def __init__(self, parent, name, cur=None):
         if name is None:
-            raise exceptions.DBError('Reflected DB entity must be defined with a name')
+            raise exceptions.DBError("Reflected DB entity must be defined with a name")
         self.name = name
         self.parent = parent
         if cur:
@@ -103,7 +104,7 @@ class ReflectedEntity(object):
         if name and cls._name_exists_ex(parent, name):
             return cls(parent, name, **kwargs)
         else:
-            raise exceptions.DBObjectDoesntExistError('{}: {} does not exist'.format(cls.__name__, name))
+            raise exceptions.DBObjectDoesntExistError("{}: {} does not exist".format(cls.__name__, name))
 
     @classmethod
     def get_or_create(cls, parent, declared_object):
@@ -118,7 +119,7 @@ class ReflectedEntity(object):
                 # Get child details from database to verify creation
                 return cls.from_declared(parent, declared_object)
             else:
-                log.info('Unable to create: {}'.format(declared_object))
+                log.info("Unable to create: {}".format(declared_object))
                 return None
 
     ###########################################################################################
@@ -173,7 +174,8 @@ class ReflectedEntity(object):
                 return child_class
         else:
             raise exceptions.InvalidDBEntityChildError(
-                'DB Entity: "{}" does not have child type: "{}"'.format(type(self).__name__, child_type))
+                'DB Entity: "{}" does not have child type: "{}"'.format(type(self).__name__, child_type)
+            )
 
     def get_object_by_id(self, *object_names):
         """
@@ -201,7 +203,7 @@ class ReflectedEntity(object):
         :param str attribute_name: name of attribute to read value for
         :return:
         """
-        method = getattr(self, 'get_attr_{}'.format(attribute_name), None)
+        method = getattr(self, "get_attr_{}".format(attribute_name), None)
         if method:
             return method(detail_result)
         else:
@@ -211,7 +213,9 @@ class ReflectedEntity(object):
             except AttributeError:
                 raise AttributeError(
                     'No method defined for getting attribute: "{}", and attribute name not in detail query result'.format(
-                        attribute_name))
+                        attribute_name
+                    )
+                )
 
     def reset_attribute(self, attribute_name):
         """
@@ -237,15 +241,19 @@ class ReflectedEntity(object):
         Returns boolean indicating whether attribute was set successfully
         """
         # Alter attribute
-        method = getattr(self, 'set_attr_{}'.format(attribute_name), None)
+        method = getattr(self, "set_attr_{}".format(attribute_name), None)
         if not method:
             log.error('No method defined for altering {} attribute: "{}"'.format(self.full_name(), attribute_name))
             return False
             # raise exceptions.DefinitionError('No method defined for altering attribute: "{}"'.format(attribute_name))
 
         new_value = getattr(declared_obj, attribute_name)
-        if input('Are you sure you want to set: {} "{}" to {}? (y/n)'.format(self.full_name(), attribute_name,
-                                                                             new_value)) == 'y':
+        if (
+            input(
+                'Are you sure you want to set: {} "{}" to {}? (y/n)'.format(self.full_name(), attribute_name, new_value)
+            )
+            == "y"
+        ):
             log.info('Setting {} "{}" = {}'.format(self, attribute_name, new_value))
             method(declared_obj)
             self.cur.commit()
@@ -253,8 +261,8 @@ class ReflectedEntity(object):
             self.reset_attribute(attribute_name)
             if getattr(self, attribute_name) != new_value:
                 raise exceptions.DBNotAlteredAttributeError(
-                    '{} attribute: "{}" was not updated to: "{}"'.format(type(self).__name__, attribute_name,
-                                                                         new_value))
+                    '{} attribute: "{}" was not updated to: "{}"'.format(type(self).__name__, attribute_name, new_value)
+                )
             return True
         else:
             return False
@@ -265,12 +273,12 @@ class ReflectedEntity(object):
     @classmethod
     def create(cls, parent, declared_object):
         # Perform create
-        log.info('Creating: {}: {}'.format(parent.full_name(), declared_object))
+        log.info("Creating: {}: {}".format(parent.full_name(), declared_object))
         cls._create_ex(parent, declared_object)
         parent.cur.commit()
         # Verify
         if not cls._name_exists_ex(parent, declared_object.name):
-            raise exceptions.DBError('Problem creating DB entity for: {}'.format(declared_object))
+            raise exceptions.DBError("Problem creating DB entity for: {}".format(declared_object))
 
     @classmethod
     def _create_ex(cls, parent, declared_object):
@@ -306,13 +314,13 @@ class ReflectedEntity(object):
         :param new_name:
         :return:
         """
-        if input('Are you sure you want to rename {} to "{}"? (y/n)'.format(self.full_name(), new_name)) == 'y':
-            log.info('Renaming {} to {}'.format(self.full_name(), new_name))
+        if input('Are you sure you want to rename {} to "{}"? (y/n)'.format(self.full_name(), new_name)) == "y":
+            log.info("Renaming {} to {}".format(self.full_name(), new_name))
             self._rename_ex(new_name)
             self.cur.commit()
             # Verify name change
             if not self._name_exists_ex(self.parent, new_name):
-                raise exceptions.DBError('Problem renaming {} to {}'.format(self.full_name(), new_name))
+                raise exceptions.DBError("Problem renaming {} to {}".format(self.full_name(), new_name))
             self.name = new_name
 
     def _rename_ex(self, new_name):
@@ -326,16 +334,18 @@ class ReflectedEntity(object):
     def delete(self):
         # Check whether object is allowed to be deleted
         if self.can_delete():
-            if input('Are you sure you want to delete {}: "{}"? (y/n)'.format(type(self).__name__,
-                                                                              self.full_name())) == 'y':
-                log.info('Deleting {}: {}'.format(type(self).__name__, self.full_name()))
+            if (
+                input('Are you sure you want to delete {}: "{}"? (y/n)'.format(type(self).__name__, self.full_name()))
+                == "y"
+            ):
+                log.info("Deleting {}: {}".format(type(self).__name__, self.full_name()))
                 self._delete_ex()
                 self.cur.commit()
             else:
                 return False
         else:
             # Log can't delete
-            log.info('Delete not allowed for: {}'.format(self))
+            log.info("Delete not allowed for: {}".format(self))
             return False
 
     def can_delete(self):
@@ -352,7 +362,7 @@ class ReflectedEntity(object):
     def get_details(self):
         details = self._get_details_ex()
         if not details:
-            raise exceptions.DBError('Problem getting details for: {}'.format(self))
+            raise exceptions.DBError("Problem getting details for: {}".format(self))
         return details
 
     def _get_details_ex(self):
@@ -365,7 +375,7 @@ class ReflectedEntity(object):
     ###########################################################################################
     #       MISC METHODS
     ###########################################################################################
-    def full_name(self, max_ancestor='databases'):
+    def full_name(self, max_ancestor="databases"):
         """Get full name of entity up to specified max level"""
         name_list = []
         current_obj = self
@@ -377,7 +387,7 @@ class ReflectedEntity(object):
                 break
         if current_obj:
             name_list.append(current_obj.name)
-        return '.'.join(name_list[::-1])
+        return ".".join(name_list[::-1])
 
     def ancestor_name(self, ancestor_type):
         """
@@ -406,21 +416,22 @@ class ReflectedEntity(object):
         :return:
         """
         return self.name.lower() == declared_obj.name.lower() or (
-                declared_obj.old_name and self.name.lower() == declared_obj.old_name.lower())
+            declared_obj.old_name and self.name.lower() == declared_obj.old_name.lower()
+        )
 
     def __str__(self):
-        return '{}:{}'.format(type(self).__name__, self.full_name())
+        return "{}:{}".format(type(self).__name__, self.full_name())
 
     def display_details(self):
-        return '{} with attributes: {}'.format(self, {attr: getattr(self, attr) for attr in self.valid_attributes})
+        return "{} with attributes: {}".format(self, {attr: getattr(self, attr) for attr in self.valid_attributes})
 
 
 ###########################################################################################
 #       PRIMARY KEY
 ###########################################################################################
 class ReflectedPrimaryKey(ReflectedEntity):
-    object_type = 'primary_keys'
-    name_prefix = 'pk'
+    object_type = "primary_keys"
+    name_prefix = "pk"
 
     @classmethod
     def _list_names_ex(cls, parent):
@@ -433,7 +444,8 @@ class ReflectedPrimaryKey(ReflectedEntity):
     @classmethod
     def _name_exists_ex(cls, parent, name):
         return bool(
-            parent.ex(sql.PK_EXISTS.format(index_name=name, schema=parent.parent.name, table=parent.name)).fetchone())
+            parent.ex(sql.PK_EXISTS.format(index_name=name, schema=parent.parent.name, table=parent.name)).fetchone()
+        )
 
     @classmethod
     def _create_ex(cls, parent, declared_object):
@@ -441,20 +453,33 @@ class ReflectedPrimaryKey(ReflectedEntity):
         cls.create_helper(parent, declared_object, drop_existing=False)
 
     def _get_details_ex(self):
-        return self.ex(sql.named_index_details.format(schema=self.parent.parent.name,
-                                                      table=self.parent.name,
-                                                      index_name=self.name)).fetchone()
+        return self.ex(
+            sql.named_index_details.format(
+                schema=self.parent.parent.name,
+                table=self.parent.name,
+                index_name=self.name,
+            )
+        ).fetchone()
 
     def _delete_ex(self):
-        self.ex(sql.DROP_CONSTRAINT.format(schema=self.parent.parent.name,
-                                           table=self.parent.name,
-                                           constraint_name=self.name))
+        self.ex(
+            sql.DROP_CONSTRAINT.format(
+                schema=self.parent.parent.name,
+                table=self.parent.name,
+                constraint_name=self.name,
+            )
+        )
 
     def _rename_ex(self, new_name):
-        self.ex(sql.RENAME_INDEX.format(schema=self.parent.parent.name,
-                                        table=self.parent.name,
-                                        old_name=self.name,
-                                        new_name=new_name), commit=True)
+        self.ex(
+            sql.RENAME_INDEX.format(
+                schema=self.parent.parent.name,
+                table=self.parent.name,
+                old_name=self.name,
+                new_name=new_name,
+            ),
+            commit=True,
+        )
         self.name = new_name
 
     @classmethod
@@ -462,14 +487,17 @@ class ReflectedPrimaryKey(ReflectedEntity):
         # Get name of PK with columns corresponding to declared object
         # Get details of PK on table
         pk_details = parent.ex(
-            sql.TABLE_PK_COLUMNS.format(schema_name=parent.parent.name, table_name=parent.name)).fetchall()
+            sql.TABLE_PK_COLUMNS.format(schema_name=parent.parent.name, table_name=parent.name)
+        ).fetchall()
         # Check if PK columns match declared
-        if [pk.column_name.lower() for pk in pk_details] == [column_name.lower() for column_name in
-                                                             declared_obj.columns]:
+        if [pk.column_name.lower() for pk in pk_details] == [
+            column_name.lower() for column_name in declared_obj.columns
+        ]:
             return cls(parent, name=pk_details[0].pk_name, **kwargs)
         else:
             raise exceptions.DBObjectDoesntExistError(
-                'Could not find any existing primary key matching definition of: {}'.format(declared_obj))
+                "Could not find any existing primary key matching definition of: {}".format(declared_obj)
+            )
 
     @classmethod
     def create_helper(cls, parent, from_obj, name=None, drop_existing=False, **kwargs):
@@ -483,36 +511,50 @@ class ReflectedPrimaryKey(ReflectedEntity):
         """
         name = name or from_obj.name
         # Determine filegroup to create on (TBA - need to check parent table for partitioning)
-        parent.ex(sql.CREATE_PK.format(schema=parent.parent.name,
-                                       table=parent.name,
-                                       pk_name=name,
-                                       columns=', '.join(from_obj.columns),
-                                       clustering='CLUSTERED' if from_obj.clustered else 'NONCLUSTERED',
-                                       compression=from_obj.compression))
+        parent.ex(
+            sql.CREATE_PK.format(
+                schema=parent.parent.name,
+                table=parent.name,
+                pk_name=name,
+                columns=", ".join(from_obj.columns),
+                clustering="CLUSTERED" if from_obj.clustered else "NONCLUSTERED",
+                compression=from_obj.compression,
+            )
+        )
 
     def get_attr_columns(self, detail):
         # If table is partitioned then the partition column will be included in the list of index columns
         # First check for all columns not involved in partition (case for non-partitioned index)
-        non_partition_columns = tuple(result.column_name.lower()
-                                      for result in
-                                      self.ex(sql.index_nonpartition_columns.format(schema=self.parent.parent.name,
-                                                                                    table=self.parent.name,
-                                                                                    index_name=self.name)).fetchall())
+        non_partition_columns = tuple(
+            result.column_name.lower()
+            for result in self.ex(
+                sql.index_nonpartition_columns.format(
+                    schema=self.parent.parent.name,
+                    table=self.parent.name,
+                    index_name=self.name,
+                )
+            ).fetchall()
+        )
         if non_partition_columns:
             return non_partition_columns
         else:
             # If none found, try for all columns (for case of Partition Index)
-            index_column_names = tuple(result.column_name.lower()
-                                       for result in
-                                       self.ex(sql.index_all_columns.format(schema=self.parent.parent.name,
-                                                                            table=self.parent.name,
-                                                                            index_name=self.name)).fetchall())
+            index_column_names = tuple(
+                result.column_name.lower()
+                for result in self.ex(
+                    sql.index_all_columns.format(
+                        schema=self.parent.parent.name,
+                        table=self.parent.name,
+                        index_name=self.name,
+                    )
+                ).fetchall()
+            )
             if not index_column_names:
-                raise Exception('Problem getting columns of index: {} of {}'.format(self.name, self.parent))
+                raise Exception("Problem getting columns of index: {} of {}".format(self.name, self.parent))
             return index_column_names
 
     def get_attr_clustered(self, detail_result):
-        return detail_result.type_desc == 'CLUSTERED'
+        return detail_result.type_desc == "CLUSTERED"
 
     def set_attr_compression(self, declared_obj, online=False):
         """
@@ -521,11 +563,16 @@ class ReflectedPrimaryKey(ReflectedEntity):
         :param bool online: Whether to rebuild index in Online mode
         :return:
         """
-        self.ex(sql.ALTER_INDEX.format(schema=self.parent.parent.name,
-                                       table=self.parent.name,
-                                       index_name=self.name,
-                                       compression=declared_obj.compression,
-                                       online='ON' if online else 'OFF'), commit=True)
+        self.ex(
+            sql.ALTER_INDEX.format(
+                schema=self.parent.parent.name,
+                table=self.parent.name,
+                index_name=self.name,
+                compression=declared_obj.compression,
+                online="ON" if online else "OFF",
+            ),
+            commit=True,
+        )
 
     def set_attr_clustered(self, declared_obj):
         self.recreate_new_attributes(declared_obj)
@@ -544,7 +591,7 @@ class ReflectedPrimaryKey(ReflectedEntity):
         :param create_on: name of partition scheme and column, or PRIMARY filegroup
         :return:
         """
-        log.info('Recreating index: {} on Filegroup: {}'.format(self, create_on))
+        log.info("Recreating index: {} on Filegroup: {}".format(self, create_on))
         self.create_helper(self.parent, self, drop_existing=True, create_on=create_on)
 
     def equate_declared(self, declared_obj):
@@ -553,7 +600,7 @@ class ReflectedPrimaryKey(ReflectedEntity):
         :param declared_obj:
         :return:
         """
-        log.debug('Comparing {} to {}'.format(self, declared_obj))
+        log.debug("Comparing {} to {}".format(self, declared_obj))
         return self.columns == declared_obj.columns
 
     def includes_column(self, column_name):
@@ -565,25 +612,30 @@ class ReflectedPrimaryKey(ReflectedEntity):
         return column_name in set(self.columns)
 
     def __str__(self):
-        return super().__str__() + ' on columns: {}'.format(self.columns)
+        return super().__str__() + " on columns: {}".format(self.columns)
 
 
 ###########################################################################################
 #       INDEX
 ###########################################################################################
 class ReflectedIndex(ReflectedPrimaryKey):
-    object_type = 'indexes'
-    name_prefix = 'ix'
+    object_type = "indexes"
+    name_prefix = "ix"
 
     @classmethod
     def _list_names_ex(cls, parent):
-        return [result.name for result in
-                parent.ex(sql.TABLE_INDEX_NAMES.format(schema=parent.parent.name, table=parent.name)).fetchall()]
+        return [
+            result.name
+            for result in parent.ex(
+                sql.TABLE_INDEX_NAMES.format(schema=parent.parent.name, table=parent.name)
+            ).fetchall()
+        ]
 
     @classmethod
     def _name_exists_ex(cls, parent, name):
-        return bool(parent.ex(
-            sql.INDEX_EXISTS.format(index_name=name, schema=parent.parent.name, table=parent.name)).fetchone())
+        return bool(
+            parent.ex(sql.INDEX_EXISTS.format(index_name=name, schema=parent.parent.name, table=parent.name)).fetchone()
+        )
 
     @classmethod
     def from_declared(cls, parent, declared_obj, **kwargs):
@@ -594,7 +646,8 @@ class ReflectedIndex(ReflectedPrimaryKey):
                 log.debug('Declared Index: {} matches existing index: "{}"'.format(declared_obj, index))
                 return index
         raise exceptions.DBObjectDoesntExistError(
-            'Could not find any existing index matching definition of: {}'.format(declared_obj))
+            "Could not find any existing index matching definition of: {}".format(declared_obj)
+        )
 
     @classmethod
     def create_helper(cls, parent, from_obj, name=None, drop_existing=False, create_on=None):
@@ -610,46 +663,66 @@ class ReflectedIndex(ReflectedPrimaryKey):
         name = name or from_obj.name
         # Get included columns
         if from_obj.included_columns:
-            include_str = "INCLUDE ({})".format(', '.join(from_obj.included_columns))
+            include_str = "INCLUDE ({})".format(", ".join(from_obj.included_columns))
         else:
-            include_str = ''
+            include_str = ""
         # If CREATE ON is not specified, determine automatically by checking parent table for partition scheme
         # (will only work on non-clustered indexes)
         if create_on is None:
-            table_partitions = parent.get_children('partitions')
+            table_partitions = parent.get_children("partitions")
             if table_partitions:
                 partition = table_partitions[0]
-                create_on = '{}({})'.format(partition.name, partition.column)
+                create_on = "{}({})".format(partition.name, partition.column)
             else:
-                create_on = '[PRIMARY]'
+                create_on = "[PRIMARY]"
 
-        parent.ex(sql.CREATE_INDEX.format(schema=parent.parent.name,
-                                          table=parent.name,
-                                          name=name,
-                                          columns=', '.join(from_obj.columns),
-                                          unique='UNIQUE' if from_obj.unique else '',
-                                          clustering='CLUSTERED' if from_obj.clustered else 'NONCLUSTERED',
-                                          drop_existing='ON' if drop_existing else 'OFF',
-                                          include=include_str,
-                                          compression=from_obj.compression,
-                                          create_on=create_on))
+        parent.ex(
+            sql.CREATE_INDEX.format(
+                schema=parent.parent.name,
+                table=parent.name,
+                name=name,
+                columns=", ".join(from_obj.columns),
+                unique="UNIQUE" if from_obj.unique else "",
+                clustering="CLUSTERED" if from_obj.clustered else "NONCLUSTERED",
+                drop_existing="ON" if drop_existing else "OFF",
+                include=include_str,
+                compression=from_obj.compression,
+                create_on=create_on,
+            )
+        )
 
     def _delete_ex(self):
         # Check if index belongs to unique constraint
         if bool(self._get_details_ex().is_unique_constraint):
             # Drop constraint
-            log.info('Dropping unique constraint of index...')
-            self.ex(sql.DROP_CONSTRAINT.format(schema=self.parent.parent.name,
-                                               table=self.parent.name,
-                                               constraint_name=self.name))
+            log.info("Dropping unique constraint of index...")
+            self.ex(
+                sql.DROP_CONSTRAINT.format(
+                    schema=self.parent.parent.name,
+                    table=self.parent.name,
+                    constraint_name=self.name,
+                )
+            )
         else:
-            self.ex(sql.DROP_INDEX.format(index_name=self.name, schema=self.parent.parent.name, table=self.parent.name))
+            self.ex(
+                sql.DROP_INDEX.format(
+                    index_name=self.name,
+                    schema=self.parent.parent.name,
+                    table=self.parent.name,
+                )
+            )
 
     def get_attr_included_columns(self, detail):
-        included_columns = set(result.column_name.lower() for result in
-                               self.ex(sql.index_included_columns.format(schema=self.parent.parent.name,
-                                                                         table=self.parent.name,
-                                                                         index_name=self.name)).fetchall())
+        included_columns = set(
+            result.column_name.lower()
+            for result in self.ex(
+                sql.index_included_columns.format(
+                    schema=self.parent.parent.name,
+                    table=self.parent.name,
+                    index_name=self.name,
+                )
+            ).fetchall()
+        )
         return included_columns or None
 
     def set_attr_included_columns(self, declared_obj):
@@ -666,7 +739,7 @@ class ReflectedIndex(ReflectedPrimaryKey):
     def __str__(self):
         rep = super().__str__()
         if self.included_columns:
-            rep += ' with included columns: {}'.format(self.included_columns)
+            rep += " with included columns: {}".format(self.included_columns)
         return rep
 
 
@@ -674,65 +747,105 @@ class ReflectedIndex(ReflectedPrimaryKey):
 #       FOREIGN KEY
 ###########################################################################################
 class ReflectedForeignKey(ReflectedEntity):
-    object_type = 'foreign_keys'
+    object_type = "foreign_keys"
 
     @classmethod
     def _list_names_ex(cls, parent):
-        return [result.name for result in
-                parent.ex(sql.TABLE_FOREIGN_KEYS.format(schema=parent.parent.name, table=parent.name)).fetchall()]
+        return [
+            result.name
+            for result in parent.ex(
+                sql.TABLE_FOREIGN_KEYS.format(schema=parent.parent.name, table=parent.name)
+            ).fetchall()
+        ]
 
     @classmethod
     def _create_ex(cls, parent, declared_object):
-        fk_name = '_'.join(['FK', parent.parent.name, parent.name, declared_object.foreign_schema,
-                            declared_object.foreign_table])
-        parent.ex(sql.CREATE_FOREIGN_KEY.format(schema=parent.parent.name,
-                                                table=parent.name,
-                                                fk_name=fk_name,
-                                                column=declared_object.column,
-                                                foreign_schema=declared_object.foreign_schema,
-                                                foreign_table=declared_object.foreign_table,
-                                                foreign_column=declared_object.foreign_column))
+        fk_name = "_".join(
+            [
+                "FK",
+                parent.parent.name,
+                parent.name,
+                declared_object.foreign_schema,
+                declared_object.foreign_table,
+            ]
+        )
+        parent.ex(
+            sql.CREATE_FOREIGN_KEY.format(
+                schema=parent.parent.name,
+                table=parent.name,
+                fk_name=fk_name,
+                column=declared_object.column,
+                foreign_schema=declared_object.foreign_schema,
+                foreign_table=declared_object.foreign_table,
+                foreign_column=declared_object.foreign_column,
+            )
+        )
 
     @classmethod
     def from_declared(cls, parent, declared_obj, **kwargs):
         # GO through all FKs on table and see if any match with declared FK configuration
         for fk_name in cls._list_names_ex(parent):
-            fk_detail = parent.ex(sql.FK_DETAILS.format(schema=parent.parent.name,
-                                                        table=parent.name,
-                                                        fk_name=fk_name)).fetchone()
+            fk_detail = parent.ex(
+                sql.FK_DETAILS.format(schema=parent.parent.name, table=parent.name, fk_name=fk_name)
+            ).fetchone()
             # If columns match, return instance with name
-            if all((getattr(fk_detail, attr) == getattr(declared_obj, attr) for attr in
-                    ('column', 'foreign_schema', 'foreign_table', 'foreign_column'))):
+            if all(
+                (
+                    getattr(fk_detail, attr) == getattr(declared_obj, attr)
+                    for attr in (
+                        "column",
+                        "foreign_schema",
+                        "foreign_table",
+                        "foreign_column",
+                    )
+                )
+            ):
                 return cls(parent, name=fk_name)
         raise exceptions.DBObjectDoesntExistError(
-            'Could not find any existing foreign key matching definition of: {}'.format(declared_obj))
+            "Could not find any existing foreign key matching definition of: {}".format(declared_obj)
+        )
 
     def _delete_ex(self):
-        self.ex(sql.DROP_CONSTRAINT.format(schema=self.parent.parent.name,
-                                           table=self.parent.name,
-                                           constraint_name=self.name))
+        self.ex(
+            sql.DROP_CONSTRAINT.format(
+                schema=self.parent.parent.name,
+                table=self.parent.name,
+                constraint_name=self.name,
+            )
+        )
 
     def _get_details_ex(self):
-        return self.ex(sql.FK_DETAILS.format(schema=self.parent.parent.name,
-                                             table=self.parent.name,
-                                             fk_name=self.name)).fetchone()
+        return self.ex(
+            sql.FK_DETAILS.format(
+                schema=self.parent.parent.name,
+                table=self.parent.name,
+                fk_name=self.name,
+            )
+        ).fetchone()
 
 
 ###########################################################################################
 #       COLUMN
 ###########################################################################################
 class ReflectedColumn(ReflectedEntity):
-    object_type = 'columns'
+    object_type = "columns"
 
     @classmethod
     def _list_names_ex(cls, parent):
-        return [result.name.lower() for result in
-                parent.ex(sql.table_column_details.format(schema=parent.parent.name, table=parent.name)).fetchall()]
+        return [
+            result.name.lower()
+            for result in parent.ex(
+                sql.table_column_details.format(schema=parent.parent.name, table=parent.name)
+            ).fetchall()
+        ]
 
     @classmethod
     def _name_exists_ex(cls, parent, name):
-        return bool(parent.ex(
-            sql.COLUMN_EXISTS.format(schema=parent.parent.name, table=parent.name, column_name=name)).fetchone())
+        return bool(
+            parent.ex(
+                sql.COLUMN_EXISTS.format(schema=parent.parent.name, table=parent.name, column_name=name)
+            ).fetchone()
+        )
 
     @classmethod
     def _create_ex(cls, parent, declared_object):
@@ -740,15 +853,23 @@ class ReflectedColumn(ReflectedEntity):
         parent.ex(sql.ADD_COLUMN.format(schema=parent.parent.name, table=parent.name, column_def=column_sql))
 
     def _get_details_ex(self):
-        return self.ex(sql.column_detail.format(schema=self.parent.parent.name,
-                                                table=self.parent.name,
-                                                column_name=self.name)).fetchone()
+        return self.ex(
+            sql.column_detail.format(
+                schema=self.parent.parent.name,
+                table=self.parent.name,
+                column_name=self.name,
+            )
+        ).fetchone()
 
     def _rename_ex(self, new_name):
-        self.ex(sql.RENAME_COLUMN.format(schema=self.parent.parent.name,
-                                         table=self.parent.name,
-                                         old_name=self.name,
-                                         new_name=new_name))
+        self.ex(
+            sql.RENAME_COLUMN.format(
+                schema=self.parent.parent.name,
+                table=self.parent.name,
+                old_name=self.name,
+                new_name=new_name,
+            )
+        )
 
     def get_attr_nullable(self, detail):
         return bool(detail.nullable)
@@ -785,8 +906,9 @@ class ReflectedColumn(ReflectedEntity):
     def set_attr_identity(self, declared_obj):
         # Check if table already has PK
         if self.parent.get_pk_fields():
-            raise Exception('Cannot make {} an identity column because {} already has a primary key'.format(self,
-                                                                                                            self.parent))
+            raise Exception(
+                "Cannot make {} an identity column because {} already has a primary key".format(self, self.parent)
+            )
         # Must delete and re-create to change identity attribute
         self.delete()
         self.create(self.parent, declared_obj)
@@ -812,7 +934,7 @@ class ReflectedColumn(ReflectedEntity):
             self._alter_column(declared_obj)
         else:
             # Dont delete column if any indexes were not removed
-            log.info('Column: {} will not be altered'.format(self.name))
+            log.info("Column: {} will not be altered".format(self.name))
 
     def _alter_column(self, declared_obj):
         """
@@ -820,9 +942,14 @@ class ReflectedColumn(ReflectedEntity):
         :param declared_obj:
         :return:
         """
-        self.ex(sql.ALTER_COLUMN.format(schema=self.parent.parent.name, table=self.parent.name,
-                                        column_def=declared_obj.sql_representation()),
-                commit=True)
+        self.ex(
+            sql.ALTER_COLUMN.format(
+                schema=self.parent.parent.name,
+                table=self.parent.name,
+                column_def=declared_obj.sql_representation(),
+            ),
+            commit=True,
+        )
         # Reset attributes because they may have been changed
         self.reset_all_attributes()
 
@@ -836,27 +963,38 @@ class ReflectedColumn(ReflectedEntity):
     def _delete_ex(self):
         if self.drop_associated_indexes():
             # Drop column
-            self.ex(sql.DROP_COLUMN.format(schema=self.parent.parent.name,
-                                           table=self.parent.name,
-                                           column_name=self.name),
-                    commit=True)
+            self.ex(
+                sql.DROP_COLUMN.format(
+                    schema=self.parent.parent.name,
+                    table=self.parent.name,
+                    column_name=self.name,
+                ),
+                commit=True,
+            )
         else:
             # Dont delete column if any indexes were not removed
-            log.info('Column: {} will not be deleted'.format(self.name))
+            log.info("Column: {} will not be deleted".format(self.name))
 
     def sql_representation(self):
-        return util.column_sql_representation(self.name, self.data_type, identity=self.identity, nullable=self.nullable,
-                                              char_max_len=self.char_max_len,
-                                              datetime_precision=self.datetime_precision,
-                                              numeric_precision=self.numeric_precision,
-                                              numeric_scale=self.numeric_scale)
+        return util.column_sql_representation(
+            self.name,
+            self.data_type,
+            identity=self.identity,
+            nullable=self.nullable,
+            char_max_len=self.char_max_len,
+            datetime_precision=self.datetime_precision,
+            numeric_precision=self.numeric_precision,
+            numeric_scale=self.numeric_scale,
+        )
 
     def data_type_representation(self):
-        return util.data_type_representation(self.data_type,
-                                             char_max_len=self.char_max_len,
-                                             datetime_precision=self.datetime_precision,
-                                             numeric_precision=self.numeric_precision,
-                                             numeric_scale=self.numeric_scale)
+        return util.data_type_representation(
+            self.data_type,
+            char_max_len=self.char_max_len,
+            datetime_precision=self.datetime_precision,
+            numeric_precision=self.numeric_precision,
+            numeric_scale=self.numeric_scale,
+        )
 
 
 ###########################################################################################
@@ -867,48 +1005,67 @@ class ReflectedPartition(ReflectedEntity):
     Represents a partition on a table. Manages corresponding partition function and scheme
     """
 
-    object_type = 'partitions'
+    object_type = "partitions"
 
     @classmethod
     def _list_names_ex(cls, parent):
         # Get names of partition schemes applied to parent table
-        return [result.ps_name for result in parent.ex(sql.table_partition_names.format(schema=parent.parent.name,
-                                                                                        table=parent.name)).fetchall()]
+        return [
+            result.ps_name
+            for result in parent.ex(
+                sql.table_partition_names.format(schema=parent.parent.name, table=parent.name)
+            ).fetchall()
+        ]
 
     @classmethod
     def _name_exists_ex(cls, parent, name):
-        return bool(parent.ex(sql.partition_name_exists_on_table.format(schema=parent.parent.name,
-                                                                        table=parent.name,
-                                                                        ps_name=name)).fetchone())
+        return bool(
+            parent.ex(
+                sql.partition_name_exists_on_table.format(schema=parent.parent.name, table=parent.name, ps_name=name)
+            ).fetchone()
+        )
 
     @classmethod
     def from_declared(cls, parent, declared_obj, **kwargs):
         # Get existing partition scheme name for table and column
-        partition_detail = parent.ex(sql.table_partition_details_for_column.format(schema=parent.parent.name,
-                                                                                   table=parent.name,
-                                                                                   column_name=declared_obj.column)).fetchone()
+        partition_detail = parent.ex(
+            sql.table_partition_details_for_column.format(
+                schema=parent.parent.name,
+                table=parent.name,
+                column_name=declared_obj.column,
+            )
+        ).fetchone()
         if partition_detail:
             return cls(parent, name=partition_detail.ps_name)
         else:
             raise exceptions.DBObjectDoesntExistError(
-                'Could not find any existing partition matching definition of: {}'.format(declared_obj))
+                "Could not find any existing partition matching definition of: {}".format(declared_obj)
+            )
 
     @classmethod
     def _create_ex(cls, parent, declared_object):
         # Get details of partition column from parent table
-        partition_column = parent.get_child('columns', declared_object.column)
+        partition_column = parent.get_child("columns", declared_object.column)
         # Validate partition column is time-based
-        if partition_column.data_type not in {'datetime', 'datetime2'}:
-            raise ValueError('Can only create partition on datetime column, not: {}'.format(partition_column.data_type))
+        if partition_column.data_type not in {"datetime", "datetime2"}:
+            raise ValueError("Can only create partition on datetime column, not: {}".format(partition_column.data_type))
         # Get partition boundary values (use existing data if present, otherwise create window around today)
-        existing_min_value = parent.ex(sql.min_column_value.format(schema=parent.parent.name,
-                                                                   table=parent.name,
-                                                                   column=partition_column.name)).fetchone()[0]
+        existing_min_value = parent.ex(
+            sql.min_column_value.format(
+                schema=parent.parent.name,
+                table=parent.name,
+                column=partition_column.name,
+            )
+        ).fetchone()[0]
         if existing_min_value:
             # Table contains existing data
-            existing_max_value = parent.ex(sql.max_column_value.format(schema=parent.parent.name,
-                                                                       table=parent.name,
-                                                                       column=partition_column.name)).fetchone()[0]
+            existing_max_value = parent.ex(
+                sql.max_column_value.format(
+                    schema=parent.parent.name,
+                    table=parent.name,
+                    column=partition_column.name,
+                )
+            ).fetchone()[0]
             # Build partition boundary values to emcompass existing data
             boundary_start_date = existing_min_value.date() - timedelta(days=5)
             boundary_end_date = existing_max_value.date() + timedelta(days=5)
@@ -917,39 +1074,50 @@ class ReflectedPartition(ReflectedEntity):
             boundary_start_date = date.today() - timedelta(days=5)
             boundary_end_date = date.today() + timedelta(days=5)
 
-        boundary_values_str = ', '.join([(boundary_start_date + timedelta(days=i)).strftime("'%Y%m%d'")
-                                         for i in range((boundary_end_date - boundary_start_date).days)])
+        boundary_values_str = ", ".join(
+            [
+                (boundary_start_date + timedelta(days=i)).strftime("'%Y%m%d'")
+                for i in range((boundary_end_date - boundary_start_date).days)
+            ]
+        )
         # Create partition function
-        pf_name = 'pf_{}_{}_{}'.format(parent.parent.name, parent.name, partition_column.name)
-        parent.ex(sql.CREATE_PARTITION_FUNCTION.format(pf_name=pf_name,
-                                                       column_type=partition_column.data_type_representation(),
-                                                       boundary_values=boundary_values_str))
+        pf_name = "pf_{}_{}_{}".format(parent.parent.name, parent.name, partition_column.name)
+        parent.ex(
+            sql.CREATE_PARTITION_FUNCTION.format(
+                pf_name=pf_name,
+                column_type=partition_column.data_type_representation(),
+                boundary_values=boundary_values_str,
+            )
+        )
         # Create partition scheme
-        ps_name = 'ps_{}_{}_{}'.format(parent.parent.name, parent.name, partition_column.name)
+        ps_name = "ps_{}_{}_{}".format(parent.parent.name, parent.name, partition_column.name)
 
-        parent.ex(sql.CREATE_PARTITION_SCHEME.format(ps_name=ps_name,
-                                                     pf_name=pf_name))
+        parent.ex(sql.CREATE_PARTITION_SCHEME.format(ps_name=ps_name, pf_name=pf_name))
         parent.cur.commit()
         # Re-build indexes on partition scheme
-        parent.recreate_indexes_on_filegroup('{}({})'.format(ps_name, partition_column.name))
+        parent.recreate_indexes_on_filegroup("{}({})".format(ps_name, partition_column.name))
         # Set name of declared object so creation verification passes
         declared_object.name = ps_name
 
     def _get_details_ex(self):
-        return self.ex(sql.table_partition_details_for_scheme.format(schema=self.parent.parent.name,
-                                                                     table=self.parent.name,
-                                                                     ps_name=self.name)).fetchone()
+        return self.ex(
+            sql.table_partition_details_for_scheme.format(
+                schema=self.parent.parent.name,
+                table=self.parent.name,
+                ps_name=self.name,
+            )
+        ).fetchone()
 
     def get_attr_column(self, detail):
         return detail.column_name.lower()
 
     def _delete_ex(self):
         # Re-create indexes on PRIMARY filegroup
-        self.parent.recreate_indexes_on_filegroup('[PRIMARY]')
+        self.parent.recreate_indexes_on_filegroup("[PRIMARY]")
         # Delete partition scheme
         self.ex(sql.DROP_PARTITION_SCHEME.format(ps_name=self.name))
         # Delete partition function
-        pf_name = 'pf_{}_{}_{}'.format(self.parent.parent.name, self.parent.name, self.column)
+        pf_name = "pf_{}_{}_{}".format(self.parent.parent.name, self.parent.name, self.column)
         self.ex(sql.DROP_PARTITION_FUNCTION.format(pf_name=pf_name))
         self.cur.commit()
 
@@ -981,8 +1149,11 @@ class ReflectedPartition(ReflectedEntity):
         :param partition_value:
         :return:
         """
-        return self.ex(sql.PARITION_NUMBER_FOR_VALUE.format(pf_name=self.get_function_name(),
-                                                            value=partition_value)).fetchone().number
+        return (
+            self.ex(sql.PARITION_NUMBER_FOR_VALUE.format(pf_name=self.get_function_name(), value=partition_value))
+            .fetchone()
+            .number
+        )
 
     def extend_range(self, to_date):
         """
@@ -993,13 +1164,17 @@ class ReflectedPartition(ReflectedEntity):
         # Get current maximum boundary value
         max_boundary_value = self.get_boundary_values()[-1].date()
         if to_date > max_boundary_value:
-            new_boundary_values = [max_boundary_value + timedelta(days=i + 1) for i in
-                                   range((to_date - max_boundary_value).days)]
+            new_boundary_values = [
+                max_boundary_value + timedelta(days=i + 1) for i in range((to_date - max_boundary_value).days)
+            ]
             pf_name = self.get_function_name()
             for boundary_date in new_boundary_values:
-                log.info('Adding new partition function boundary value: {}'.format(boundary_date))
+                log.info("Adding new partition function boundary value: {}".format(boundary_date))
                 self.ex(sql.SET_PARTITION_NEXT_FILEGROUP.format(scheme_name=self.name))
-                self.ex(sql.SPLIT_PARITION_RANGE.format(fn_name=pf_name, new_date=boundary_date), commit=True)
+                self.ex(
+                    sql.SPLIT_PARITION_RANGE.format(fn_name=pf_name, new_date=boundary_date),
+                    commit=True,
+                )
 
     def merge_unitl_date(self, until_date):
         """
@@ -1007,12 +1182,12 @@ class ReflectedPartition(ReflectedEntity):
         :param date until_date:
         :return:
         """
-        assert isinstance(until_date, date), 'Provided merge value must be a date'
+        assert isinstance(until_date, date), "Provided merge value must be a date"
         boundary_values = self.get_boundary_values()
         pf_name = self.get_function_name()
         for boundary_value in boundary_values:
             if boundary_value.date() <= until_date:
-                log.info('Merging partition function boundary value: {}'.format(boundary_value))
+                log.info("Merging partition function boundary value: {}".format(boundary_value))
                 self.ex(sql.MERGE_PARTITION_RANGE.format(fn_name=pf_name, merge_date=boundary_value))
             else:
                 # Exit once until_date is exceeded
@@ -1023,37 +1198,50 @@ class ReflectedPartition(ReflectedEntity):
 #       TABLE
 ###########################################################################################
 class ReflectedTable(ReflectedEntity):
-    object_type = 'tables'
-    child_types = (ReflectedPrimaryKey, ReflectedIndex, ReflectedColumn, ReflectedPartition)
+    object_type = "tables"
+    child_types = (
+        ReflectedPrimaryKey,
+        ReflectedIndex,
+        ReflectedColumn,
+        ReflectedPartition,
+    )
 
     @classmethod
     def _list_names_ex(cls, parent):
-        return [result.name for result in
-                parent.ex(sql.list_tables_in_schema.format(schema=parent.name)).fetchall()]
+        return [result.name for result in parent.ex(sql.list_tables_in_schema.format(schema=parent.name)).fetchall()]
 
     @classmethod
     def _name_exists_ex(cls, parent, name):
         return bool(
-            parent.ex(sql.TABLE_EXISTS.format(db_name=parent.parent.name, schema=parent.name, table=name)).fetchone())
+            parent.ex(sql.TABLE_EXISTS.format(db_name=parent.parent.name, schema=parent.name, table=name)).fetchone()
+        )
 
     @classmethod
     def _create_ex(cls, parent, declared_object):
         # Get column list
-        defined_columns = declared_object.get_children('columns')
-        assert defined_columns, 'Cannot create table: {}, no columns have been defined'.format(declared_object)
+        defined_columns = declared_object.get_children("columns")
+        assert defined_columns, "Cannot create table: {}, no columns have been defined".format(declared_object)
         columns_sql = [column.sql_representation() for column in defined_columns]
         parent.ex(
-            sql.CREATE_TABLE.format(schema=parent.name, table=declared_object.name, columns=', '.join(columns_sql)))
+            sql.CREATE_TABLE.format(
+                schema=parent.name,
+                table=declared_object.name,
+                columns=", ".join(columns_sql),
+            )
+        )
 
     def _get_details_ex(self):
-        return self.ex(sql.table_details.format(schema=self.parent.name,
-                                                table=self.name)).fetchone()
+        return self.ex(sql.table_details.format(schema=self.parent.name, table=self.name)).fetchone()
 
     def set_identity_insert(self, value):
-        self.ex(sql.set_identity_insert.format(db_name=self.parent.parent.name,
-                                               schema=self.parent.name,
-                                               table=self.name,
-                                               value='ON' if value else 'OFF'))
+        self.ex(
+            sql.set_identity_insert.format(
+                db_name=self.parent.parent.name,
+                schema=self.parent.name,
+                table=self.name,
+                value="ON" if value else "OFF",
+            )
+        )
 
     def get_indexes_for_column(self, column_name):
         """
@@ -1061,7 +1249,7 @@ class ReflectedTable(ReflectedEntity):
         :param str column_name:
         :return:
         """
-        return [index for index in self.get_children('indexes') if index.includes_column(column_name)]
+        return [index for index in self.get_children("indexes") if index.includes_column(column_name)]
 
     def recreate_indexes_on_filegroup(self, filegroup):
         # Re-create clustered index on  filegroup
@@ -1072,16 +1260,16 @@ class ReflectedTable(ReflectedEntity):
         self.cur.commit()
 
     def get_clustered_index(self):
-        for index in self.get_children('indexes'):
+        for index in self.get_children("indexes"):
             if index.clustered:
                 return index
         return None
 
     def get_nonclustered_indexes(self):
-        return [index for index in self.get_children('indexes') if not index.clustered]
+        return [index for index in self.get_children("indexes") if not index.clustered]
 
     def get_pk_fields(self):
-        pks = self.get_children('primary_keys')
+        pks = self.get_children("primary_keys")
         if pks:
             return pks[0].columns
 
@@ -1093,9 +1281,17 @@ class ReflectedTable(ReflectedEntity):
         Get compression type of table (or clustered index of table)
         :return: NONE, ROW or PAGE
         """
-        return self.ex(
-            sql.table_compression_details.format(db_name=self.parent.parent.name, schema=self.parent.name,
-                                                 table_name=self.name)).fetchone().compression
+        return (
+            self.ex(
+                sql.table_compression_details.format(
+                    db_name=self.parent.parent.name,
+                    schema=self.parent.name,
+                    table_name=self.name,
+                )
+            )
+            .fetchone()
+            .compression
+        )
 
     def set_compression(self, compression_type, online=False):
         """
@@ -1104,11 +1300,16 @@ class ReflectedTable(ReflectedEntity):
         :param bool online: Whether to rebuild table in ONLINE mode (allows access but takes longer)
         :return:
         """
-        if compression_type not in {'PAGE', 'ROW', 'NONE'}:
-            raise ValueError('Invalid compression type: {}'.format(compression_type))
-        self.ex(sql.SET_TABLE_COMPRESSION.format(schema=self.parent.name, table=self.name,
-                                                 compression=compression_type,
-                                                 online='ON' if online else 'OFF'))
+        if compression_type not in {"PAGE", "ROW", "NONE"}:
+            raise ValueError("Invalid compression type: {}".format(compression_type))
+        self.ex(
+            sql.SET_TABLE_COMPRESSION.format(
+                schema=self.parent.name,
+                table=self.name,
+                compression=compression_type,
+                online="ON" if online else "OFF",
+            )
+        )
 
     def _rename_ex(self, new_name):
         self.ex(sql.RENAME_TABLE.format(schema=self.parent.name, old_name=self.name, new_name=new_name))
@@ -1127,22 +1328,26 @@ class ReflectedTable(ReflectedEntity):
         Truncate data in table from given partitions
         :return:
         """
-        return self.ex(sql.TRUNCATE_TABLE_PARTITIONS.format(schema=self.parent.name,
-                                                            table=self.name,
-                                                            start_partition=start_partition,
-                                                            end_partition=end_partition))
+        return self.ex(
+            sql.TRUNCATE_TABLE_PARTITIONS.format(
+                schema=self.parent.name,
+                table=self.name,
+                start_partition=start_partition,
+                end_partition=end_partition,
+            )
+        )
 
     def __str__(self):
-        return '[{}].[{}]'.format(self.parent.name, self.name)
+        return "[{}].[{}]".format(self.parent.name, self.name)
 
 
 ###########################################################################################
 #       SCHEMA
 ###########################################################################################
 class ReflectedSchema(ReflectedEntity):
-    object_type = 'schemas'
+    object_type = "schemas"
     child_types = (ReflectedTable,)
-    system_names = ('sys', 'guest', 'INFORMATION_SCHEMA')
+    system_names = ("sys", "guest", "INFORMATION_SCHEMA")
 
     @classmethod
     def _create_ex(cls, parent, declared):
@@ -1157,19 +1362,25 @@ class ReflectedSchema(ReflectedEntity):
         return [result.name for result in parent.ex(sql.LIST_SCHEMAS.format(db_name=parent.name)).fetchall()]
 
     def _rename_ex(self, new_name):
-        raise exceptions.DBError('Renaming schema not yet supported, have to create new schema and move all objects..')
+        raise exceptions.DBError("Renaming schema not yet supported, have to create new schema and move all objects..")
 
     def _delete_ex(self):
-        raise exceptions.DBError('Deleting schema not yet supported, have to delete all child objects..')
+        raise exceptions.DBError("Deleting schema not yet supported, have to delete all child objects..")
 
 
 ###########################################################################################
 #       USER
 ###########################################################################################
 class ReflectedUser(ReflectedEntity):
-    object_type = 'users'
-    ALL_DB_ROLES = {'db_accessadmin', 'db_datareader', 'db_datawriter', 'db_owner', 'db_securityadmin'}
-    system_names = {'dbo', 'guest', 'sys', 'INFORMATION_SCHEMA'}
+    object_type = "users"
+    ALL_DB_ROLES = {
+        "db_accessadmin",
+        "db_datareader",
+        "db_datawriter",
+        "db_owner",
+        "db_securityadmin",
+    }
+    system_names = {"dbo", "guest", "sys", "INFORMATION_SCHEMA"}
 
     @classmethod
     def from_declared(cls, parent, declared_obj, **kwargs):
@@ -1177,9 +1388,9 @@ class ReflectedUser(ReflectedEntity):
         login_name = declared_obj.login_name
         login_user = parent.ex(sql.USER_FOR_LOGIN.format(login_name=login_name)).fetchone()
         if login_user:
-            log.debug('Found existing user: {} for login: {}'.format(login_user.name, login_user.login_name))
+            log.debug("Found existing user: {} for login: {}".format(login_user.name, login_user.login_name))
             return cls(parent, name=login_user.name)
-        raise exceptions.DBObjectDoesntExistError('Could not find any existing user for login: {}'.format(login_name))
+        raise exceptions.DBObjectDoesntExistError("Could not find any existing user for login: {}".format(login_name))
 
     @classmethod
     def _create_ex(cls, parent, declared):
@@ -1189,7 +1400,10 @@ class ReflectedUser(ReflectedEntity):
         parent.ex(sql.CREATE_USER.format(user_name=user_name, login_name=login_name))
         # Add to roles
         for role_name in declared.db_roles:
-            parent.ex(sql.alter_db_role.format(role=role_name, action='ADD', user_name=user_name), commit=True)
+            parent.ex(
+                sql.alter_db_role.format(role=role_name, action="ADD", user_name=user_name),
+                commit=True,
+            )
 
     @classmethod
     def _list_names_ex(cls, parent):
@@ -1208,14 +1422,20 @@ class ReflectedUser(ReflectedEntity):
     def set_attr_db_roles(self, declared_obj):
         # First check if user login is owner of database
         if self.ex(sql.DATABASE_DETAIL.format(db_name=self.parent.name)).fetchone().owner == self.login_name:
-            log.info('User login already owner of database, cant set roles')
+            log.info("User login already owner of database, cant set roles")
             return
         # Roles to add
         for role_name in set(declared_obj.db_roles) - set(self.db_roles):
-            self.ex(sql.alter_db_role.format(role=role_name, action='ADD', user_name=self.name), commit=True)
+            self.ex(
+                sql.alter_db_role.format(role=role_name, action="ADD", user_name=self.name),
+                commit=True,
+            )
         # Roles to remove
         for role_name in set(self.db_roles) - set(declared_obj.db_roles):
-            self.ex(sql.alter_db_role.format(role=role_name, action='DROP', user_name=self.name), commit=True)
+            self.ex(
+                sql.alter_db_role.format(role=role_name, action="DROP", user_name=self.name),
+                commit=True,
+            )
 
     def equate_declared(self, declared_obj):
         """
@@ -1233,9 +1453,16 @@ class ReflectedUser(ReflectedEntity):
 #       DATABASE
 ###########################################################################################
 class ReflectedDatabase(ReflectedEntity):
-    object_type = 'databases'
+    object_type = "databases"
     child_types = (ReflectedSchema, ReflectedUser)
-    system_names = ('master', 'tempdb', 'model', 'msdb', 'ReportServer', 'ReportServerTempDB')
+    system_names = (
+        "master",
+        "tempdb",
+        "model",
+        "msdb",
+        "ReportServer",
+        "ReportServerTempDB",
+    )
 
     def extra_init(self):
         """
@@ -1248,11 +1475,13 @@ class ReflectedDatabase(ReflectedEntity):
     def _create_ex(cls, parent, declared_db):
         create_sql = sql.CREATE_DB_BASE.format(db_name=declared_db.name)
         if declared_db.data_file_path:
-            create_sql += sql.CREATE_DB_FILESPEC.format(db_name=declared_db.name,
-                                                        data_size=declared_db.data_size,
-                                                        log_size=declared_db.log_size,
-                                                        data_file_path=declared_db.data_file_path,
-                                                        log_file_path=declared_db.log_file_path)
+            create_sql += sql.CREATE_DB_FILESPEC.format(
+                db_name=declared_db.name,
+                data_size=declared_db.data_size,
+                log_size=declared_db.log_size,
+                data_file_path=declared_db.data_file_path,
+                log_file_path=declared_db.log_file_path,
+            )
 
         parent.ex(create_sql, autocommit=True)
 
@@ -1284,17 +1513,23 @@ class ReflectedDatabase(ReflectedEntity):
         return self.ex(sql.db_file_info.format(db_name=self.name, file_type="LOG")).fetchone().physical_name
 
     def set_attr_recovery_model_desc(self, declared_db):
-        self.ex(sql.db_option_set.format(db_name=self.name, option_name='RECOVERY',
-                                         value=declared_db.recovery_model_desc), autocommit=True)
+        self.ex(
+            sql.db_option_set.format(
+                db_name=self.name,
+                option_name="RECOVERY",
+                value=declared_db.recovery_model_desc,
+            ),
+            autocommit=True,
+        )
 
     def set_attr_owner(self, declared_db):
         self.ex(sql.set_db_owner.format(db_owner=declared_db.owner), autocommit=True)
 
     def set_attr_data_file_path(self, declared_db):
-        self.change_db_file_path('ROWS', declared_db.data_file_path)
+        self.change_db_file_path("ROWS", declared_db.data_file_path)
 
     def set_attr_log_file_path(self, declared_db):
-        self.change_db_file_path('LOG', declared_db.log_file_path)
+        self.change_db_file_path("LOG", declared_db.log_file_path)
 
     def change_db_file_path(self, file_type, new_path):
         """
@@ -1305,21 +1540,29 @@ class ReflectedDatabase(ReflectedEntity):
         :return:
         """
         if self.ex(sql.DB_IN_HAG.format(db_name=self.name)).fetchone():
-            raise Exception('Cannot change DB file path because it is involved in an Availability Group')
-        if input(
-                'Database must not be in use and you will need to manually move database file, do you want to continue? (y/n)') == 'y':
+            raise Exception("Cannot change DB file path because it is involved in an Availability Group")
+        if (
+            input(
+                "Database must not be in use and you will need to manually move database file, do you want to continue? (y/n)"
+            )
+            == "y"
+        ):
             # Get database file details
             file_info = self.ex(sql.db_file_info.format(db_name=self.name, file_type=file_type)).fetchone()
             # Change configured database
             self.cur.execute("USE [master]")
             with util.AutoCommit(self.cur.conn):
-                self.ex(sql.CHANGE_DB_FILE_PATH.format(db_name=self.name,
-                                                       file_name=file_info.name,
-                                                       file_path=new_path), enforce_db=False)
+                self.ex(
+                    sql.CHANGE_DB_FILE_PATH.format(db_name=self.name, file_name=file_info.name, file_path=new_path),
+                    enforce_db=False,
+                )
                 # Set database offline
                 self.ex(sql.SET_DB_OFFLINE.format(db_name=self.name), enforce_db=False)
-                input('Move file: {} to new location: {} then press Enter to continue'.format(file_info.physical_name,
-                                                                                              new_path))
+                input(
+                    "Move file: {} to new location: {} then press Enter to continue".format(
+                        file_info.physical_name, new_path
+                    )
+                )
                 # Set database online
                 self.ex(sql.SET_DB_ONLINE.format(db_name=self.name), enforce_db=False)
 
@@ -1336,26 +1579,30 @@ class ReflectedDatabase(ReflectedEntity):
         file_detail = self.ex(sql.db_file_info.format(db_name=self.name, file_type=file_type)).fetchone()
         # Shrink  file
         if new_size < file_detail.current_size_mb:
-            self.ex(sql.SHRINK_DB_FILE.format(file_name=file_detail.name, size=new_size), autocommit=True)
+            self.ex(
+                sql.SHRINK_DB_FILE.format(file_name=file_detail.name, size=new_size),
+                autocommit=True,
+            )
         # Grow  file
         else:
-            self.ex(sql.GROW_DB_FILE.format(db_name=self.name,
-                                            file_name=file_detail.name,
-                                            size=new_size), autocommit=True)
+            self.ex(
+                sql.GROW_DB_FILE.format(db_name=self.name, file_name=file_detail.name, size=new_size),
+                autocommit=True,
+            )
 
     def get_tables(self, schema=None, **kwargs):
-        """"Shortcut method to get all tables within database by getting intermediate schemas"""
+        """ "Shortcut method to get all tables within database by getting intermediate schemas"""
         if schema:
-            schemas = [self.get_child('schemas', schema)]
+            schemas = [self.get_child("schemas", schema)]
         else:
-            schemas = self.get_children('schemas')
-        schema_tables = [schema.get_children('tables', **kwargs) for schema in schemas]
+            schemas = self.get_children("schemas")
+        schema_tables = [schema.get_children("tables", **kwargs) for schema in schemas]
         return [table for sublist in schema_tables for table in sublist]
 
-    def get_table(self, table_name, schema_name='dbo', **kwargs):
+    def get_table(self, table_name, schema_name="dbo", **kwargs):
         """Shortcut method which also gets an intermediate schema"""
-        schema = self.get_child('schemas', schema_name, **kwargs)
-        return schema.get_child('tables', table_name, **kwargs)
+        schema = self.get_child("schemas", schema_name, **kwargs)
+        return schema.get_child("tables", table_name, **kwargs)
 
     def get_max_lsn(self):
         """
@@ -1380,18 +1627,30 @@ class ReflectedDatabase(ReflectedEntity):
 #       LOGIN
 ###########################################################################################
 class ReflectedLogin(ReflectedEntity):
-    object_type = 'logins'
-    ALL_SERVER_ROLES = {'sysadmin', 'securityadmin', 'serveradmin', 'setupadmin', 'processadmin', 'diskadmin',
-                        'dbcreator', 'bulkadmin'}
-    system_names = ('##MS_PolicyTsqlExecutionLogin##', 'GCT', '##MS_PolicyEventProcessingLogin##', 'sa')
+    object_type = "logins"
+    ALL_SERVER_ROLES = {
+        "sysadmin",
+        "securityadmin",
+        "serveradmin",
+        "setupadmin",
+        "processadmin",
+        "diskadmin",
+        "dbcreator",
+        "bulkadmin",
+    }
+    system_names = (
+        "##MS_PolicyTsqlExecutionLogin##",
+        "GCT",
+        "##MS_PolicyEventProcessingLogin##",
+        "sa",
+    )
 
     can_create = False
 
     @classmethod
     def _create_ex(cls, parent, declared_login):
         # Get password from credential
-        parent.ex(sql.CREATE_LOGIN.format(login_name=declared_login.name,
-                                          password=declared_login.password))
+        parent.ex(sql.CREATE_LOGIN.format(login_name=declared_login.name, password=declared_login.password))
 
     @classmethod
     def _name_exists_ex(cls, parent, name):
@@ -1407,13 +1666,19 @@ class ReflectedLogin(ReflectedEntity):
     def set_attr_server_roles(self, declared_server):
         # Roles to add
         for role_name in set(declared_server.server_roles) - set(self.server_roles):
-            self.ex(sql.ALTER_SERVER_ROLE.format(role=role_name, action='ADD', login_name=self.name), commit=True)
+            self.ex(
+                sql.ALTER_SERVER_ROLE.format(role=role_name, action="ADD", login_name=self.name),
+                commit=True,
+            )
         # Roles to remove
         for role_name in set(self.server_roles) - set(declared_server.server_roles):
-            self.ex(sql.ALTER_SERVER_ROLE.format(role=role_name, action='DROP', login_name=self.name), commit=True)
+            self.ex(
+                sql.ALTER_SERVER_ROLE.format(role=role_name, action="DROP", login_name=self.name),
+                commit=True,
+            )
 
     def get_attr_password(self, detail):
-        return 'dummypassword'
+        return "dummypassword"
 
     def _get_details_ex(self):
         return self.ex(sql.LOGIN_DETAIL.format(name=self.name)).fetchone()
@@ -1433,12 +1698,13 @@ class ReflectedServer(ReflectedEntity):
     """
     Object representing SLQServer Server Instance
     """
-    object_type = 'servers'
+
+    object_type = "servers"
     child_types = (ReflectedLogin, ReflectedDatabase)
 
     @classmethod
     def from_cursor(cls, cur):
-        server_name = cur.execute('SELECT @@SERVERNAME').fetchone()[0]
+        server_name = cur.execute("SELECT @@SERVERNAME").fetchone()[0]
         return cls(parent=None, cur=cur, name=server_name)
 
     def get_current_database(self):
@@ -1446,8 +1712,8 @@ class ReflectedServer(ReflectedEntity):
         Get database object for currently connected database
         :return:
         """
-        db_name = self.cur.execute('SELECT DB_NAME() AS db_name').fetchone().db_name
-        db = self.get_child('databases', db_name)
+        db_name = self.cur.execute("SELECT DB_NAME() AS db_name").fetchone().db_name
+        db = self.get_child("databases", db_name)
         if not db:
             raise Exception('Database: "{}" does not exist on server or login does not have access'.format(db_name))
         return db
